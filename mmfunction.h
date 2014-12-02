@@ -263,7 +263,7 @@ public:
 		return m_pData[ y * m_Size[ 0 ] + x ];
 	}
 
-	DTYPE operator()( int x, int y ) const
+	const DTYPE& operator()( int x, int y ) const
 	{
 		return m_pData[ y * m_Size[ 0 ] + x ];
 	}
