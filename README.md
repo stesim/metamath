@@ -1,4 +1,4 @@
 metamath
 ========
 
-Small C++ template based math library.
+C++ template based math library.
