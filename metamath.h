@@ -37,12 +37,12 @@ public:
 
 	DTYPE& operator()( int x, int y )
 	{
-		return ( *m_pFunc )( m_pBegin[ 0 ] + x, m_pBegin[ 0 ] + y );
+		return ( *m_pFunc )( m_pBegin[ 0 ] + x, m_pBegin[ 1 ] + y );
 	}
 
 	DTYPE operator()( int x, int y ) const
 	{
-		return ( *m_pFunc )( m_pBegin[ 0 ] + x, m_pBegin[ 0 ] + y );
+		return ( *m_pFunc )( m_pBegin[ 0 ] + x, m_pBegin[ 1 ] + y );
 	}
 
 	const int* size() const
@@ -54,6 +54,7 @@ public:
 	FunctionView<Tfunc>& operator=( const Top& op )
 	{
 		set( *this, op );
+		return *this;
 	}
 
 private:
@@ -414,6 +415,27 @@ private:
 	const Top m_Op;
 };
 
+template<typename Top>
+class Transpose
+{
+public:
+	typedef typename Top::DTYPE DTYPE;
+
+public:
+	Transpose( const Top& op )
+		: m_Op( op )
+	{
+	}
+
+	DTYPE operator()( int x, int y ) const
+	{
+		return m_Op( y, x );
+	}
+
+private:
+	const Top m_Op;
+};
+
 /* === END OPERATOR DECLARATIONS === */
 
 }
@@ -542,6 +564,12 @@ inline op::Neg<Top> operator-( const Top& op )
 	return op::Neg<Top>( op );
 }
 
+template<typename Top>
+inline op::Transpose<Top> transpose( const Top& op )
+{
+	return op::Transpose<Top>( op );
+}
+
 /* === END OPERATOR PROXIES === */
 
 template<typename Tfunc, typename Top>
@@ -581,6 +609,25 @@ inline void set( Tfunc& func, const Tbegin& begin,
 		const Tend& end, const Top& op )
 {
 	set( func, begin[ 0 ], begin[ 1 ], end[ 0 ], end[ 1 ], op );
+}
+
+template<typename Tfunc, typename Top, typename Tbegin, typename Tend, typename Tstep>
+inline void set( Tfunc& func, const Tbegin& begin,
+		const Tend& end, const Top& op, const Tstep& step )
+{
+	int beginX = begin[ 0 ];
+	int beginY = begin[ 1 ];
+	int endX = end[ 0 ];
+	int endY = end[ 1 ];
+	int stepX = step[ 0 ];
+	int stepY = step[ 1 ];
+	for( int j = beginY; j < endY; j += stepY )
+	{
+		for( int i = beginX; i < endX; i += stepX )
+		{
+			func( i, j ) = op( i, j );
+		}
+	}
 }
 
 template<typename Top>

@@ -136,6 +136,23 @@ inline typename op::DiffXX_YY<Top>::type diffXX_YY( const Top& op, const Th& h )
 			- ( 2 / ( h[ 0 ] * h[ 0 ] ) + 2 / ( h[ 1 ] * h[ 1 ] ) ) % op );
 }
 
+template<typename Tfunc, typename Top, typename Tbegin, typename Tend>
+inline void setCheckered( Tfunc& func, const Tbegin& begin,
+		const Tend& end, bool color, const Top& op )
+{
+	int beginX = begin[ 0 ];
+	int beginY = begin[ 1 ];
+	int endX = end[ 0 ];
+	int endY = end[ 1 ];
+	for( int j = beginY; j < endY; ++j )
+	{
+		for( int i = beginX + ( j + color ) % 2; i < endX; i += 2 )
+		{
+			func( i, j ) = op( i, j );
+		}
+	}
+}
+
 }
 
 }

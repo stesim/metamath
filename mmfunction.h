@@ -294,7 +294,22 @@ void printFunc( const Tfunc& func, const Tbegin& begin, const Tend& end )
 	{
 		for( int i = begin.x; i < end.x; ++i )
 		{
-			printf( "%12.4f", func( j * sizeX + i ) );
+			printf( "%12.4f", func( i, j ) );
+		}
+		printf( "\n" );
+	}
+}
+
+template<typename Tfunc>
+void printFunc( const Tfunc& func )
+{
+	int sizeX = func.size()[ 0 ];
+	int sizeY = func.size()[ 1 ];
+	for( int j = 0; j < sizeY; ++j )
+	{
+		for( int i = 0; i < sizeX; ++i )
+		{
+			printf( "%12.4f", func( i, j ) );
 		}
 		printf( "\n" );
 	}
