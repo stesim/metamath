@@ -541,25 +541,25 @@ inline op::Scale<Top> scale( const Top& op, typename Top::DTYPE factor )
 template<typename Top>
 inline op::Scale<Top> operator*( typename Top::DTYPE factor, const Top& op )
 {
-		return op::Scale<Top>( op, factor );
+	return op::Scale<Top>( op, factor );
 }
 
 template<typename Top>
 inline op::Scale<Top> operator*( const Top& op, typename Top::DTYPE factor )
 {
-		return op::Scale<Top>( op, factor );
+	return op::Scale<Top>( op, factor );
 }
 
 template<typename Top>
 inline op::Scale<Top> operator/( typename Top::DTYPE factor, const Top& op )
 {
-		return op::Scale<Top>( op, (typename Top::DTYPE)1 / factor );
+	return op::Scale<Top>( op, (typename Top::DTYPE)1 / factor );
 }
 
 template<typename Top>
 inline op::Scale<Top> operator/( const Top& op, typename Top::DTYPE factor )
 {
-		return op::Scale<Top>( op, (typename Top::DTYPE)1 / factor );
+	return op::Scale<Top>( op, (typename Top::DTYPE)1 / factor );
 }
 
 template<typename Top>
