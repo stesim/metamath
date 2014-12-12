@@ -1,12 +1,18 @@
 #ifndef _METAMATH_H_
 #define _METAMATH_H_
 
+#include <type_traits>
+
 #ifndef NULL
 #define NULL 0
 #endif
 
 namespace mm
 {
+
+template<typename T>
+using enable_if_compound =
+	typename std::enable_if<std::is_compound<T>::value,T>::value;
 
 template<typename Tfunc>
 class FunctionView
@@ -504,7 +510,9 @@ inline op::Mul<Top1, Top2> mul( const Top1& op1, const Top2& op2 )
 	return op::Mul<Top1, Top2>( op1, op2 );
 }
 
-template<typename Top1, typename Top2>
+template<typename Top1, typename Top2,
+	typename Enable1 = enable_if_compound<Top1>,
+	typename Enable2 = enable_if_compound<Top2>>
 inline op::Mul<Top1, Top2> operator*( const Top1& op1, const Top2& op2 )
 {
 	return op::Mul<Top1, Top2>( op1, op2 );
@@ -516,7 +524,9 @@ inline op::Div<Top1, Top2> div( const Top1& op1, const Top2& op2 )
 	return op::Div<Top1, Top2>( op1, op2 );
 }
 
-template<typename Top1, typename Top2>
+template<typename Top1, typename Top2,
+	typename Enable1 = enable_if_compound<Top1>,
+	typename Enable2 = enable_if_compound<Top2>>
 inline op::Div<Top1, Top2> operator/( const Top1& op1, const Top2& op2 )
 {
 	return op::Div<Top1, Top2>( op1, op2 );
@@ -529,15 +539,27 @@ inline op::Scale<Top> scale( const Top& op, typename Top::DTYPE factor )
 }
 
 template<typename Top>
-inline op::Scale<Top> operator%( const Top& op, typename Top::DTYPE factor )
+inline op::Scale<Top> operator*( typename Top::DTYPE factor, const Top& op )
 {
-	return op::Scale<Top>( op, factor );
+		return op::Scale<Top>( op, factor );
 }
 
 template<typename Top>
-inline op::Scale<Top> operator%( typename Top::DTYPE factor, const Top& op )
+inline op::Scale<Top> operator*( const Top& op, typename Top::DTYPE factor )
 {
-	return op::Scale<Top>( op, factor );
+		return op::Scale<Top>( op, factor );
+}
+
+template<typename Top>
+inline op::Scale<Top> operator/( typename Top::DTYPE factor, const Top& op )
+{
+		return op::Scale<Top>( op, (typename Top::DTYPE)1 / factor );
+}
+
+template<typename Top>
+inline op::Scale<Top> operator/( const Top& op, typename Top::DTYPE factor )
+{
+		return op::Scale<Top>( op, (typename Top::DTYPE)1 / factor );
 }
 
 template<typename Top>
