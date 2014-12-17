@@ -3,16 +3,12 @@
 
 #include <type_traits>
 
-#ifndef NULL
-#define NULL 0
-#endif
-
 namespace mm
 {
 
 template<typename T>
 using enable_if_compound =
-	typename std::enable_if<std::is_compound<T>::value,T>::value;
+	typename std::enable_if<std::is_compound<T>::value,T>::type;
 
 template<typename Tfunc>
 class FunctionView

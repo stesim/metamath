@@ -1,11 +1,8 @@
 #ifndef _MMFUNCTION_H_
 #define _MMFUNCTION_H_
 
+#include <metamath/metamath.h>
 #include <cstdio>
-
-#ifndef NULL
-#define NULL 0
-#endif
 
 namespace mm
 {
@@ -248,6 +245,16 @@ public:
 		}
 	}
 
+	DTYPE& operator[]( int i )
+	{
+		return m_pData[ i ];
+	}
+
+	const DTYPE& operator[]( int i ) const
+	{
+		return m_pData[ i ];
+	}
+
 	DTYPE& operator()( int point )
 	{
 		return m_pData[ point ];
@@ -289,7 +296,6 @@ private:
 template<typename Tfunc, typename Tbegin, typename Tend>
 void printFunc( const Tfunc& func, const Tbegin& begin, const Tend& end )
 {
-	int sizeX = func.size()[ 0 ];
 	for( int j = begin.y; j < end.y; ++j )
 	{
 		for( int i = begin.x; i < end.x; ++i )
