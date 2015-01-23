@@ -203,14 +203,14 @@ public:
 
 public:
 	Function()
-		: m_pData( NULL ), m_bOwnsData( true )
+		: m_pData( nullptr ), m_bOwnsData( true )
 	{
 		for( unsigned int i = 0; i < Dim; ++i )
 		{
 			m_Size[ i ] = 0;
 		}
 
-		m_pData = NULL;
+		m_pData = nullptr;
 	}
 
 	template<typename U>
@@ -237,9 +237,22 @@ public:
 		}
 	}
 
+	Function( Function<T, Dim>&& ref )
+		: m_pData( ref.m_pData ), m_bOwnsData( true )
+	{
+		for( unsigned int i = 0; i < Dim; ++i )
+		{
+			m_Size[ i ] = ref.m_Size[ i ];
+		}
+
+		ref.m_bOwnsData( false );
+		ref.m_pData = nullptr;
+		ref.m_Size = Tuple<int, Dim>::ZERO;
+	}
+
 	~Function()
 	{
-		if( m_bOwnsData && m_pData != NULL )
+		if( m_bOwnsData && m_pData != nullptr )
 		{
 			delete[] m_pData;
 		}
@@ -253,16 +266,6 @@ public:
 	const DTYPE& operator[]( int i ) const
 	{
 		return m_pData[ i ];
-	}
-
-	DTYPE& operator()( int point )
-	{
-		return m_pData[ point ];
-	}
-
-	DTYPE operator()( int point ) const
-	{
-		return m_pData[ point ];
 	}
 
 	DTYPE& operator()( int x, int y )

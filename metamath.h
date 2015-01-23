@@ -2,6 +2,7 @@
 #define _METAMATH_H_
 
 #include <type_traits>
+#include <random>
 
 namespace mm
 {
@@ -10,12 +11,18 @@ template<typename T>
 using enable_if_compound =
 	typename std::enable_if<std::is_compound<T>::value,T>::type;
 
+template<typename T>
+using op_dtype =
+	typename std::remove_reference<decltype( std::declval<T>()( 0, 0 ) )>::type;
+
 template<typename Tfunc>
 class FunctionView
 {
 public:
-	typedef typename Tfunc::DTYPE DTYPE;
 	static const unsigned int DIM = Tfunc::DIM;
+
+private:
+	typedef op_dtype<Tfunc> DTYPE;
 
 public:
 	FunctionView( Tfunc& func, int beginX, int beginY, int endX, int endY )
@@ -35,6 +42,16 @@ public:
 		m_pBegin[ 1 ] = begin[ 1 ];
 		m_pSize[ 0 ] = end[ 0 ] - begin[ 0 ];
 		m_pSize[ 1 ] = end[ 1 ] - begin[ 1 ];
+	}
+
+	DTYPE& operator[]( int i )
+	{
+		return ( *m_pFunc )[ i ];
+	}
+
+	DTYPE operator[]( int i ) const
+	{
+		return ( *m_pFunc )[ i ];
 	}
 
 	DTYPE& operator()( int x, int y )
@@ -73,18 +90,13 @@ namespace op
 template<typename Tfunc, int OffsetX = 0, int OffsetY = 0>
 class Eval
 {
-public:
-	typedef typename Tfunc::DTYPE DTYPE;
+private:
+	typedef op_dtype<Tfunc> DTYPE;
 
 public:
 	Eval( const Tfunc& func )
 		: m_Func( func )
 	{
-	}
-
-	DTYPE operator()( int point ) const
-	{
-		return m_Func( point + OffsetY * m_Func->size()[ 0 ] + OffsetX );
 	}
 
 	DTYPE operator()( int x, int y ) const
@@ -99,18 +111,13 @@ private:
 template<typename Tfunc>
 class Eval<Tfunc, 0, 0>
 {
-public:
-	typedef typename Tfunc::DTYPE DTYPE;
+private:
+	typedef op_dtype<Tfunc> DTYPE;
 
 public:
 	Eval( const Tfunc& func )
 		: m_Func( func )
 	{
-	}
-
-	DTYPE operator()( int point ) const
-	{
-		return m_Func( point );
 	}
 
 	DTYPE operator()( int x, int y ) const
@@ -125,18 +132,13 @@ private:
 template<typename Tfunc, int OffsetX>
 class Eval<Tfunc, OffsetX, 0>
 {
-public:
-	typedef typename Tfunc::DTYPE DTYPE;
+private:
+	typedef op_dtype<Tfunc> DTYPE;
 
 public:
 	Eval( const Tfunc& func )
 		: m_Func( func )
 	{
-	}
-
-	DTYPE operator()( int point ) const
-	{
-		return m_Func( point + OffsetX );
 	}
 
 	DTYPE operator()( int x, int y ) const
@@ -151,18 +153,13 @@ private:
 template<typename Tfunc, int OffsetY>
 class Eval<Tfunc, 0, OffsetY>
 {
-public:
-	typedef typename Tfunc::DTYPE DTYPE;
+private:
+	typedef op_dtype<Tfunc> DTYPE;
 
 public:
 	Eval( const Tfunc& func )
 		: m_Func( func )
 	{
-	}
-
-	DTYPE operator()( int point ) const
-	{
-		return m_Func( point + OffsetY * m_Func->size()[ 0 ] );
 	}
 
 	DTYPE operator()( int x, int y ) const
@@ -178,43 +175,50 @@ template<typename T>
 class Const
 {
 public:
-	typedef T DTYPE;
-
-public:
-	Const( DTYPE constant )
+	Const( T constant )
 		: m_Constant( constant )
 	{
 	}
 
-	DTYPE operator()( int point ) const
-	{
-		return m_Constant;
-	}
-
-	DTYPE operator()( int x, int y ) const
+	T operator()( int x, int y ) const
 	{
 		return m_Constant;
 	}
 
 private:
-	DTYPE m_Constant;
+	T m_Constant;
+};
+
+template<typename T>
+class Rand
+{
+public:
+	Rand( T min, T max )
+		: m_Min( min ), m_Max( max )
+	{
+	}
+
+	T operator()( int x, int y ) const
+	{
+		return ( m_Min + ( rand() / (double)RAND_MAX ) * ( m_Max - m_Min ) );
+	}
+
+private:
+	T m_Min;
+	T m_Max;
 };
 
 template<typename Top1, typename Top2>
 class Add
 {
-public:
-	typedef typename Top1::DTYPE DTYPE;
+private:
+	typedef decltype(std::declval<op_dtype<Top1>>()
+			+ std::declval<op_dtype<Top2>>()) DTYPE;
 
 public:
 	Add( const Top1& op1, const Top2& op2 )
 		: m_Op1( op1 ), m_Op2( op2 )
 	{
-	}
-
-	DTYPE operator()( int point ) const
-	{
-		return m_Op1( point ) + m_Op2( point );
 	}
 
 	DTYPE operator()( int x, int y ) const
@@ -230,18 +234,14 @@ private:
 template<typename Top1, typename Top2>
 class Sub
 {
-public:
-	typedef typename Top1::DTYPE DTYPE;
+private:
+	typedef decltype(std::declval<op_dtype<Top1>>()
+			- std::declval<op_dtype<Top2>>()) DTYPE;
 
 public:
 	Sub( const Top1& op1, const Top2& op2 )
 		: m_Op1( op1 ), m_Op2( op2 )
 	{
-	}
-
-	DTYPE operator()( int point ) const
-	{
-		return m_Op1( point ) - m_Op2( point );
 	}
 
 	DTYPE operator()( int x, int y ) const
@@ -257,18 +257,14 @@ private:
 template<typename Top1, typename Top2>
 class Mul
 {
-public:
-	typedef typename Top1::DTYPE DTYPE;
+private:
+	typedef decltype(std::declval<op_dtype<Top1>>()
+			* std::declval<op_dtype<Top2>>()) DTYPE;
 
 public:
 	Mul( const Top1& op1, const Top2& op2 )
 		: m_Op1( op1 ), m_Op2( op2 )
 	{
-	}
-
-	DTYPE operator()( int point ) const
-	{
-		return m_Op1( point ) * m_Op2( point );
 	}
 
 	DTYPE operator()( int x, int y ) const
@@ -284,18 +280,14 @@ private:
 template<typename Top1, typename Top2>
 class Div
 {
-public:
-	typedef typename Top1::DTYPE DTYPE;
+private:
+	typedef decltype(std::declval<op_dtype<Top1>>()
+			/ std::declval<op_dtype<Top2>>()) DTYPE;
 
 public:
 	Div( const Top1& op1, const Top2& op2 )
 		: m_Op1( op1 ), m_Op2( op2 )
 	{
-	}
-
-	DTYPE operator()( int point ) const
-	{
-		return m_Op1( point ) / m_Op2( point );
 	}
 
 	DTYPE operator()( int x, int y ) const
@@ -311,18 +303,13 @@ private:
 template<typename Top>
 class Scale
 {
-public:
-	typedef typename Top::DTYPE DTYPE;
+private:
+	typedef op_dtype<Top> DTYPE;
 
 public:
 	Scale( const Top& op, DTYPE factor )
 		: m_Op( op ), m_Factor( factor )
 	{
-	}
-
-	DTYPE operator()( int point ) const
-	{
-		return m_Factor * m_Op( point );
 	}
 
 	DTYPE operator()( int x, int y ) const
@@ -338,19 +325,13 @@ private:
 template<typename Top>
 class Abs
 {
-public:
-	typedef typename Top::DTYPE DTYPE;
+private:
+	typedef op_dtype<Top> DTYPE;
 
 public:
 	Abs( const Top& op )
 		: m_Op( op )
 	{
-	}
-
-	DTYPE operator()( int point ) const
-	{
-		DTYPE val = m_Op( point );
-		return ( val >= 0 ? val : -val );
 	}
 
 	DTYPE operator()( int x, int y ) const
@@ -366,19 +347,13 @@ private:
 template<typename Top>
 class Sqr
 {
-public:
-	typedef typename Top::DTYPE DTYPE;
+private:
+	typedef op_dtype<Top> DTYPE;
 
 public:
 	Sqr( const Top& op )
 		: m_Op( op )
 	{
-	}
-
-	DTYPE operator()( int point ) const
-	{
-		DTYPE val = m_Op( point );
-		return ( val * val );
 	}
 
 	DTYPE operator()( int x, int y ) const
@@ -394,18 +369,13 @@ private:
 template<typename Top>
 class Neg
 {
-public:
-	typedef typename Top::DTYPE DTYPE;
+private:
+	typedef op_dtype<Top> DTYPE;
 
 public:
 	Neg( const Top& op )
 		: m_Op( op )
 	{
-	}
-
-	DTYPE operator()( int point ) const
-	{
-		return -m_Op( point );
 	}
 
 	DTYPE operator()( int x, int y ) const
@@ -420,8 +390,8 @@ private:
 template<typename Top>
 class Transpose
 {
-public:
-	typedef typename Top::DTYPE DTYPE;
+private:
+	typedef op_dtype<Top> DTYPE;
 
 public:
 	Transpose( const Top& op )
@@ -474,6 +444,12 @@ template<typename T>
 inline op::Const<T> constant( T value )
 {
 	return op::Const<T>( value );
+}
+
+template<typename T>
+inline op::Rand<T> rand( T min, T max )
+{
+	return op::Rand<T>( min, max );
 }
 
 template<typename Top1, typename Top2>
@@ -529,33 +505,33 @@ inline op::Div<Top1, Top2> operator/( const Top1& op1, const Top2& op2 )
 }
 
 template<typename Top>
-inline op::Scale<Top> scale( const Top& op, typename Top::DTYPE factor )
+inline op::Scale<Top> scale( const Top& op, op_dtype<Top> factor )
 {
 	return op::Scale<Top>( op, factor );
 }
 
 template<typename Top>
-inline op::Scale<Top> operator*( typename Top::DTYPE factor, const Top& op )
+inline op::Scale<Top> operator*( op_dtype<Top> factor, const Top& op )
 {
 	return op::Scale<Top>( op, factor );
 }
 
 template<typename Top>
-inline op::Scale<Top> operator*( const Top& op, typename Top::DTYPE factor )
+inline op::Scale<Top> operator*( const Top& op, op_dtype<Top> factor )
 {
 	return op::Scale<Top>( op, factor );
 }
 
 template<typename Top>
-inline op::Scale<Top> operator/( typename Top::DTYPE factor, const Top& op )
+inline op::Scale<Top> operator/( op_dtype<Top> factor, const Top& op )
 {
-	return op::Scale<Top>( op, (typename Top::DTYPE)1 / factor );
+	return op::Scale<Top>( op, (op_dtype<Top>)1 / factor );
 }
 
 template<typename Top>
-inline op::Scale<Top> operator/( const Top& op, typename Top::DTYPE factor )
+inline op::Scale<Top> operator/( const Top& op, op_dtype<Top> factor )
 {
-	return op::Scale<Top>( op, (typename Top::DTYPE)1 / factor );
+	return op::Scale<Top>( op, (op_dtype<Top>)1 / factor );
 }
 
 template<typename Top>
@@ -599,8 +575,6 @@ inline void set( Tfunc& func, const Top& op )
 	{
 		for( int i = 0; i < sizeX; ++i )
 		{
-// 			int point = j * sizeX + i;
-// 			func( point ) = op( point );
 			func( i, j ) = op( i, j );
 		}
 	}
@@ -610,13 +584,10 @@ template<typename Tfunc, typename Top>
 inline void set( Tfunc& func, int beginX, int beginY,
 		int endX, int endY, const Top& op )
 {
-//	int sizeX = func.size()[ 0 ];
 	for( int j = beginY; j < endY; ++j )
 	{
 		for( int i = beginX; i < endX; ++i )
 		{
-//			int point = j * sizeX + i;
-//			func( point ) = op( point );
 			func( i, j ) = op( i, j );
 		}
 	}
@@ -649,15 +620,17 @@ inline void set( Tfunc& func, const Tbegin& begin,
 }
 
 template<typename Top>
-inline typename Top::DTYPE max( const Top& op, int beginX, int beginY,
+inline op_dtype<Top> max( const Top& op, int beginX, int beginY,
 		int endX, int endY )
 {
-	typename Top::DTYPE maxVal = op( beginX, beginY );
+	typedef op_dtype<Top> DTYPE;
+
+	DTYPE maxVal = op( beginX, beginY );
 	for( int j = beginY; j < endY; ++j )
 	{
 		for( int i = beginX; i < endX; ++i )
 		{
-			typename Top::DTYPE curVal = op( i, j );
+			DTYPE curVal = op( i, j );
 			if( curVal > maxVal )
 			{
 				maxVal = curVal;
@@ -668,22 +641,24 @@ inline typename Top::DTYPE max( const Top& op, int beginX, int beginY,
 }
 
 template<typename Top, typename Tbegin, typename Tend>
-inline typename Top::DTYPE max( const Top& op, const Tbegin& begin,
+inline op_dtype<Top> max( const Top& op, const Tbegin& begin,
 		const Tend& end )
 {
 	return max( op, begin[ 0 ], begin[ 1 ], end[ 0 ], end[ 1 ] );
 }
 
 template<typename Top>
-inline typename Top::DTYPE min( const Top& op, int beginX, int beginY,
+inline op_dtype<Top> min( const Top& op, int beginX, int beginY,
 		int endX, int endY )
 {
-	typename Top::DTYPE minVal = op( beginX, beginY );
+	typedef op_dtype<Top> DTYPE;
+
+	DTYPE minVal = op( beginX, beginY );
 	for( int j = beginY; j < endY; ++j )
 	{
 		for( int i = beginX; i < endX; ++i )
 		{
-			typename Top::DTYPE curVal = op( i, j );
+			DTYPE curVal = op( i, j );
 			if( curVal < minVal )
 			{
 				minVal = curVal;
@@ -694,17 +669,17 @@ inline typename Top::DTYPE min( const Top& op, int beginX, int beginY,
 }
 
 template<typename Top, typename Tbegin, typename Tend>
-inline typename Top::DTYPE min( const Top& op, const Tbegin& begin,
+inline op_dtype<Top> min( const Top& op, const Tbegin& begin,
 		const Tend& end )
 {
 	return max( op, begin[ 0 ], begin[ 1 ], end[ 0 ], end[ 1 ] );
 }
 
 template<typename Top>
-inline typename Top::DTYPE sum( const Top& op, int beginX, int beginY,
+inline op_dtype<Top> sum( const Top& op, int beginX, int beginY,
 		int endX, int endY )
 {
-	typename Top::DTYPE sum = 0;
+	op_dtype<Top> sum = 0;
 	for( int j = beginY; j < endY; ++j )
 	{
 		for( int i = beginX; i < endX; ++i )
@@ -716,7 +691,7 @@ inline typename Top::DTYPE sum( const Top& op, int beginX, int beginY,
 }
 
 template<typename Top, typename Tbegin, typename Tend>
-inline typename Top::DTYPE sum( const Top& op, const Tbegin& begin,
+inline op_dtype<Top> sum( const Top& op, const Tbegin& begin,
 		const Tend& end )
 {
 	return sum( op, begin[ 0 ], begin[ 1 ], end[ 0 ], end[ 1 ] );
