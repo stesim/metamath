@@ -290,6 +290,26 @@ public:
 		return *this;
 	}
 
+	Function<T, Dim>& operator=( Function<T, Dim>&& ref )
+	{
+		if( m_pData != nullptr && m_bOwnsData )
+		{
+			delete[] m_pData;
+		}
+
+		m_pData = ref.m_pData;
+		m_bOwnsData = true;
+
+		for( unsigned int i = 0; i < Dim; ++i )
+		{
+			m_Size[ i ] = ref.m_Size[ i ];
+		}
+
+		ref.m_bOwnsData( false );
+		ref.m_pData = nullptr;
+		ref.m_Size = Tuple<int, Dim>::ZERO;
+	}
+
 private:
 	DTYPE* m_pData;
 	Tuple<int, Dim> m_Size;
