@@ -308,6 +308,8 @@ public:
 		ref.m_bOwnsData = false;
 		ref.m_pData = nullptr;
 		ref.m_Size = Tuple<int, Dim>::ZERO;
+		
+		return *this;
 	}
 
 private:
