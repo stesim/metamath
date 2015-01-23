@@ -153,6 +153,42 @@ inline void setCheckered( Tfunc& func, const Tbegin& begin,
 	}
 }
 
+template<typename Tfunc, typename Top, typename Tmask>
+inline void setMasked( Tfunc& func, const Tmask& mask, const Top& op )
+{
+	for( int j = 0; j < func.size().y; ++j )
+	{
+		for( int i = 0; i < func.size().x; ++i )
+		{
+			if( mask( i, j ) )
+			{
+				func( i, j ) = op( i, j );
+			}
+		}
+	}
+}
+
+template<typename Tfunc, typename Top, typename Tmask,
+	typename Tbegin, typename Tend>
+inline void setMasked( Tfunc& func, const Tbegin& begin,
+		const Tend& end, const Tmask& mask, const Top& op )
+{
+	int beginX = begin[ 0 ];
+	int beginY = begin[ 1 ];
+	int endX = end[ 0 ];
+	int endY = end[ 1 ];
+	for( int j = beginY; j < endY; ++j )
+	{
+		for( int i = beginX; i < endX; ++i )
+		{
+			if( mask( i, j ) )
+			{
+				func( i, j ) = op( i, j );
+			}
+		}
+	}
+}
+
 }
 
 }
