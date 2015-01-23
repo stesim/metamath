@@ -245,7 +245,7 @@ public:
 			m_Size[ i ] = ref.m_Size[ i ];
 		}
 
-		ref.m_bOwnsData( false );
+		ref.m_bOwnsData = false;
 		ref.m_pData = nullptr;
 		ref.m_Size = Tuple<int, Dim>::ZERO;
 	}
@@ -305,7 +305,7 @@ public:
 			m_Size[ i ] = ref.m_Size[ i ];
 		}
 
-		ref.m_bOwnsData( false );
+		ref.m_bOwnsData = false;
 		ref.m_pData = nullptr;
 		ref.m_Size = Tuple<int, Dim>::ZERO;
 	}
